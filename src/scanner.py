@@ -23,30 +23,42 @@ class Scanner:
         while not self.end_doc:         
             cur_token=chocoToken.Token()  # We create token in every iteration
 
-            singleToken=True
-            while singleToken:             #There's a single token otherwise next iteration
-                next_char = self.peek_char()
-                if self.cur_char.isalpha():     #Identify if is a keyword or ID
-                    self.cur_word+=self.cur_char
-                    while next_char!=False and next_char.isalpha():  #We acumulate the word until there's no alpha character
-                        self.get_char()
-                        self.cur_word+=self.cur_char 
-                        next_char = self.peek_char()
-                    singleToken = False
-                    cur_token.name=self.cur_word
-                    self.token_in_line = True
-                    if dic.keywords.get(self.cur_word) != None:     #Verify if it's a Keyword, else ID
-                        cur_token.type="KEYWORD"
-                    else:
-                        cur_token.type="ID"
-                    cur_token.print_token()
-                    self.cur_word = ''
-                else: 
-                    singleToken=False
-                if next_char == False:          #If nextchar is False means it's the end of the txt
-                    self.end_doc = True
+            next_char = self.peek_char()
+            if self.cur_char.isalpha():     #Identify if is a keyword or ID
+                self.cur_word+=self.cur_char
+                while next_char!=False and (next_char.isalpha() or next_char.isdecimal() or next_char == '_'):  #We acumulate the word until there's no alpha character
+                    self.get_char()
+                    self.cur_word+=self.cur_char 
+                    next_char = self.peek_char()
+                cur_token.name=self.cur_word
+                self.token_in_line = True
+                if dic.keywords.get(self.cur_word) != None:     #Verify if it's a Keyword, else ID
+                    cur_token.type="KEYWORD"
                 else:
-                    self.get_char()           #We get the next char for the following iterations
+                    cur_token.type="ID"
+                cur_token.print_token()
+            elif self.cur_char.isdecimal():
+                self.cur_word+=self.cur_char
+                while next_char!=False and next_char.isdecimal():  #We acumulate the word until there's no alpha character
+                    self.get_char()
+                    self.cur_word+=self.cur_char 
+                    next_char = self.peek_char()
+                if next_char==' ':
+                    cur_token.name=self.cur_word
+                    cur_token.type = 'INTEGER'
+                    self.token_in_line = True
+                    cur_token.print_token()
+                #else:
+                    #ERROR 
+            self.cur_word = ''
+
+            if next_char == False:          #If nextchar is False means it's the end of the txt
+                self.end_doc = True
+            elif next_char == '#':
+                self.get_char()
+                self.jump_line()
+            else:
+                self.get_char()           #We get the next char for the following iterations
     
     def get_char(self):    #Moves the current char to the next char if it exists, otherwise return False
         if self.cur_char != '\n':
