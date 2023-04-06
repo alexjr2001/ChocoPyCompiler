@@ -50,6 +50,17 @@ class Scanner:
                     cur_token.print_token()
                 #else:
                     #ERROR 
+            else:
+                self.cur_word+=self.cur_char
+                while next_char!= False and ~(next_char.isalpha() or next_char.isdecimal() or next_char == '_') :  #We acumulate the word until there's no alpha character
+                    self.get_char()
+                    self.cur_word+=self.cur_char 
+                    next_char = self.peek_char()
+                if dic.operators.get(self.cur_word) != None:
+                    cur_token.type = "OPERATOR"
+                elif dic.bin_op.get(self.cur_word) != None:
+                    cur_token.type = "BIN OPERATOR"
+
             self.cur_word = ''
 
             if next_char == False:          #If nextchar is False means it's the end of the txt
