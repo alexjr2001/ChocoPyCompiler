@@ -28,7 +28,6 @@ class Scanner:
             cur_token=chocoToken.Token()  # We create token in every iteration
 
             next_char = self.peek_char()
-
             if self.cur_char.isalpha():     #Identify if is a keyword or ID
                 self.cur_word+=self.cur_char
                 while next_char!=False and (next_char.isalpha() or next_char.isdecimal() or next_char == '_'):  #We acumulate the word until there's no alpha character
@@ -49,13 +48,14 @@ class Scanner:
                     self.get_char()
                     self.cur_word+=self.cur_char 
                     next_char = self.peek_char()
-                if next_char==' ':
+                if not next_char.isalpha() or 2147483647>=int(self.cur_word):
                     cur_token.name=self.cur_word
                     cur_token.type = 'INTEGER'
                     self.token_in_line = True
                     cur_token.print_token()
                 #else:
                     #ERROR 
+                    #When the next char is alpha
 
             elif dic.operators.get(acumulate) or dic.bin_op.get(acumulate):
                 self.cur_word = acumulate
@@ -84,12 +84,32 @@ class Scanner:
                 cur_token.name = self.cur_word
                 self.token_in_line = True
                 cur_token.print_token()
-
+            
+            elif self.cur_char == "\"" or self.cur_char == "\'":
+                self.cur_word += self.cur_char
+                error = False
+                while not error and (next_char!="\"" and next_char!="\'" or self.cur_char == "\\"):
+                    self.get_char()
+                    self.cur_word+=self.cur_char 
+                    next_char=self.peek_char()
+                    if next_char == False or (self.cur_char == "\\" and (next_char !="\"" and next_char != "\'")) or next_char == "\n":
+                        error = True
+                if next_char != False:
+                    self.get_char()
+                    self.cur_word+=self.cur_char
+                if not error: 
+                    next_char = self.peek_char()
+                    cur_token.name = self.cur_word
+                    cur_token.type = "STRING"
+                    cur_token.print_token()
+                #if error:
+                    #WHILE("\"" OR " ")
+                    #self.cur_word NOT RECOGNIZED
             self.cur_word = ''
 
             if next_char == False:          #If nextchar is False means it's the end of the txt
                 self.end_doc = True
-            elif next_char == '#':
+            elif self.cur_char == '#' or next_char == '#':
                 self.get_char()
                 self.jump_line()
             else:
