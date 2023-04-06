@@ -18,12 +18,17 @@ class Scanner:
         self.total_lines = len(self.lines)
     
     def getTokens(self):                #Getting all the tokens in the file .txt
-        self.token_in_line = False    
+        self.token_in_line = False
         self.update_cur_char()
-        while not self.end_doc:         
+        
+        while not self.end_doc:
+            acumulate = ''
+            if self.peek_char() != False:  
+                acumulate = self.cur_char + self.peek_char()
             cur_token=chocoToken.Token()  # We create token in every iteration
 
             next_char = self.peek_char()
+
             if self.cur_char.isalpha():     #Identify if is a keyword or ID
                 self.cur_word+=self.cur_char
                 while next_char!=False and (next_char.isalpha() or next_char.isdecimal() or next_char == '_'):  #We acumulate the word until there's no alpha character
@@ -37,6 +42,7 @@ class Scanner:
                 else:
                     cur_token.type="ID"
                 cur_token.print_token()
+
             elif self.cur_char.isdecimal():
                 self.cur_word+=self.cur_char
                 while next_char!=False and next_char.isdecimal():  #We acumulate the word until there's no alpha character
@@ -50,6 +56,35 @@ class Scanner:
                     cur_token.print_token()
                 #else:
                     #ERROR 
+
+            elif dic.operators.get(acumulate) or dic.bin_op.get(acumulate):
+                self.cur_word = acumulate
+
+                if dic.operators.get(self.cur_word) != None:
+                    cur_token.type = "OPERATOR"
+                elif dic.bin_op.get(self.cur_word) != None:
+                    cur_token.type = "BIN OPERATOR"
+                #else:
+                    #ERROR
+
+                cur_token.name = self.cur_word
+                self.token_in_line = True
+                self.get_char()
+                cur_token.print_token()
+            
+            elif dic.operators.get(self.cur_char) or dic.bin_op.get(self.cur_char):
+                self.cur_word = self.cur_char
+
+                if dic.operators.get(self.cur_word) != None:
+                    cur_token.type = "OPERATOR"
+                elif dic.bin_op.get(self.cur_word) != None:
+                    cur_token.type = "BIN OPERATOR"
+                #else:
+                    #ERROR
+                cur_token.name = self.cur_word
+                self.token_in_line = True
+                cur_token.print_token()
+
             self.cur_word = ''
 
             if next_char == False:          #If nextchar is False means it's the end of the txt
