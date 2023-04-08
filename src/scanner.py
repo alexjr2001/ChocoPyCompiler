@@ -10,6 +10,7 @@ class Scanner:
         self.idx_line = 0
         self.idx_char = 0
         self.total_lines = 0
+        self.spaces = 0
         self.end_doc = False
 
     def open_file(self, file_name):     #Open the file and counts how many lines has
@@ -23,7 +24,7 @@ class Scanner:
         
         while not self.end_doc:
             acumulate = ''
-            if self.peek_char() != False:  
+            if self.peek_char() != False: 
                 acumulate = self.cur_char + self.peek_char()
             cur_token=chocoToken.Token()  # We create token in every iteration
 
@@ -116,9 +117,27 @@ class Scanner:
         if self.total_lines-1 > self.idx_line:
             self.idx_line+=1
             self.idx_char = 0
+            space_test = 0
+
+            while self.lines[self.idx_line][self.idx_char] == ' ':
+                space_test += 1
+                self.idx_char += 1
+            space_test = space_test/4
+            if (space_test - self.spaces) != 0:
+                cur_token=chocoToken.Token()
+                cur_token.name = ' '
+                if space_test > self.spaces:
+                    for i in range(int(abs(space_test-self.spaces))):
+                        cur_token.type = "DENT"
+                elif space_test < self.spaces:
+                    for i in range(int(abs(space_test-self.spaces))):
+                        cur_token.type = "DESDENT"
+                self.spaces = space_test
+                cur_token.print_token()
+
             self.update_cur_char()
             jump=True
-        else:
+        else: 
             self.end_doc = True
         if self.token_in_line:
             literal = chocoToken.Token("NEWLINE","LITERAL")
