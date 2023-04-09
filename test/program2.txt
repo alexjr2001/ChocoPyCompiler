@@ -5,7 +5,11 @@ def find_square(num):
 
 # function call
 square = find_square(3)
-
+"sld,sl,dls"
+"sld,sl,dls :
+9595
+959a
 print('Square:',square)
 
 # Output: Square: 9
+"sld,sl,dls:"

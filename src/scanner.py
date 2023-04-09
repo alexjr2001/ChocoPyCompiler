@@ -10,6 +10,7 @@ class Scanner:
         self.idx_line = 0
         self.idx_char = 0
         self.total_lines = 0
+        self.errors = 0
         self.end_doc = False
 
     def open_file(self, file_name):     #Open the file and counts how many lines has
@@ -18,6 +19,7 @@ class Scanner:
         self.total_lines = len(self.lines)
     
     def getTokens(self):                #Getting all the tokens in the file .txt
+        print("INFO SCAN - Start scanning...")
         self.token_in_line = False
         self.update_cur_char()
         
@@ -34,12 +36,11 @@ class Scanner:
                     self.get_char()
                     self.cur_word+=self.cur_char 
                     next_char = self.peek_char()
-                cur_token.name=self.cur_word
                 self.token_in_line = True
                 if dic.keywords.get(self.cur_word) != None:     #Verify if it's a Keyword, else ID
-                    cur_token.type="KEYWORD"
+                    cur_token.set_info(self.cur_word,"KEYWORD",self.idx_line,self.idx_char)
                 else:
-                    cur_token.type="ID"
+                    cur_token.set_info(self.cur_word,"ID",self.idx_line,self.idx_char)
                 cur_token.print_token()
 
             elif self.cur_char.isdecimal():
@@ -48,26 +49,27 @@ class Scanner:
                     self.get_char()
                     self.cur_word+=self.cur_char 
                     next_char = self.peek_char()
-                if not next_char.isalpha() or 2147483647>=int(self.cur_word):
-                    cur_token.name=self.cur_word
-                    cur_token.type = 'INTEGER'
+                if not next_char.isalpha() and 2147483647>=int(self.cur_word):
+                    cur_token.set_info(self.cur_word,"INTEGER",self.idx_line,self.idx_char)
                     self.token_in_line = True
                     cur_token.print_token()
-                #else:
-                    #ERROR 
-                    #When the next char is alpha
+                else:
+                    while next_char!= False and (next_char.isalpha() or next_char.isdecimal()):
+                        self.get_char()
+                        self.cur_word+=self.cur_char 
+                        next_char = self.peek_char()
+                    self.print_error()
 
             elif dic.operators.get(acumulate) or dic.bin_op.get(acumulate):
                 self.cur_word = acumulate
 
                 if dic.operators.get(self.cur_word) != None:
-                    cur_token.type = "OPERATOR"
+                    cur_token.set_info(self.cur_word,"OPERATOR",self.idx_line,self.idx_char)
                 elif dic.bin_op.get(self.cur_word) != None:
-                    cur_token.type = "BIN OPERATOR"
+                    cur_token.set_info(self.cur_word,"BIN OPERATOR",self.idx_line,self.idx_char)
                 #else:
                     #ERROR
 
-                cur_token.name = self.cur_word
                 self.token_in_line = True
                 self.get_char()
                 cur_token.print_token()
@@ -76,12 +78,11 @@ class Scanner:
                 self.cur_word = self.cur_char
 
                 if dic.operators.get(self.cur_word) != None:
-                    cur_token.type = "OPERATOR"
+                    cur_token.set_info(self.cur_word,"OPERATOR",self.idx_line,self.idx_char)
                 elif dic.bin_op.get(self.cur_word) != None:
-                    cur_token.type = "BIN OPERATOR"
+                    cur_token.set_info(self.cur_word,"BIN OPERATOR",self.idx_line,self.idx_char)
                 #else:
                     #ERROR
-                cur_token.name = self.cur_word
                 self.token_in_line = True
                 cur_token.print_token()
             
@@ -99,12 +100,15 @@ class Scanner:
                     self.cur_word+=self.cur_char
                 if not error: 
                     next_char = self.peek_char()
-                    cur_token.name = self.cur_word
-                    cur_token.type = "STRING"
+                    cur_token.set_info(self.cur_word,"STRING",self.idx_line,self.idx_char)
+                    self.token_in_line = True
                     cur_token.print_token()
-                #if error:
-                    #WHILE("\"" OR " ")
-                    #self.cur_word NOT RECOGNIZED
+                if error:
+                    while next_char!= False and next_char!=" " and next_char!="\n":
+                        self.get_char()
+                        self.cur_word+=self.cur_char 
+                        next_char = self.peek_char()
+                    self.print_error()
             self.cur_word = ''
 
             if next_char == False:          #If nextchar is False means it's the end of the txt
@@ -141,11 +145,19 @@ class Scanner:
         else:
             self.end_doc = True
         if self.token_in_line:
-            literal = chocoToken.Token("NEWLINE","LITERAL")
+            literal = chocoToken.Token()
+            literal.set_info("NEWLINE","LITERAL",self.idx_line,self.idx_char)
             literal.print_token()
             self.token_in_line = False
         return jump
-
+    
+    def print_error(self):
+        self.errors +=1
+        if self.cur_word[-1]=='\n': 
+            self.cur_word = self.cur_word[:-1]
+        space_occupied = len(self.cur_word)
+        spaces_to_align = " "*max(0,16-space_occupied)
+        print("ERROR",self.cur_word,"is not recognized",spaces_to_align,"FOUND AT (",self.idx_line,":",self.idx_char,")")
 
     def update_cur_char(self):
         self.cur_char = self.lines[self.idx_line][self.idx_char]
@@ -154,4 +166,4 @@ class Scanner:
     def __del__(self):
         if self.file != None:
             self.file.close()
-        print("Destructor")
+        print("INFO SCAN COMPLETED WITH ", self.errors, "ERRORS")
