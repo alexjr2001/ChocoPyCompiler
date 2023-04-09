@@ -13,6 +13,6 @@ class Token:
     def print_token(self):
         space_occupied = len(self.name + self.type)
         spaces_to_align = " "*max(0,20-space_occupied)
-        print("DEBUG SCAN - <",self.name,",",self.type,">",spaces_to_align, "FOUND AT (",self.line,":",self.column,")")
+        print("DEBUG SCAN - <",self.name,",",self.type,">",spaces_to_align, "FOUND AT (",self.line+1,":",self.column,")")
 
     
