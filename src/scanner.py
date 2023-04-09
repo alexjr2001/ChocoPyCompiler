@@ -1,4 +1,5 @@
 import chocoToken
+import pyfiglet
 import sys
 sys.path.append('../')
 from lib import dictionary as dic
@@ -13,6 +14,7 @@ class Scanner:
         self.spaces = 0
         self.errors = 0
         self.end_doc = False
+        print(pyfiglet.figlet_format("SCANNER", font = "slant"))
 
     def open_file(self, file_name):     #Open the file and counts how many lines has
         self.file=open("../test/"+file_name,"r")
