@@ -122,18 +122,22 @@ class Scanner:
             while self.lines[self.idx_line][self.idx_char] == ' ':
                 space_test += 1
                 self.idx_char += 1
-            space_test = space_test/4
-            if (space_test - self.spaces) != 0:
-                cur_token=chocoToken.Token()
-                cur_token.name = ' '
-                if space_test > self.spaces:
-                    for i in range(int(abs(space_test-self.spaces))):
-                        cur_token.type = "DENT"
-                elif space_test < self.spaces:
-                    for i in range(int(abs(space_test-self.spaces))):
-                        cur_token.type = "DESDENT"
-                self.spaces = space_test
-                cur_token.print_token()
+            if self.lines[self.idx_line][self.idx_char] != ' ' and self.lines[self.idx_line][self.idx_char] != '\n':
+                space_test = space_test/4
+                if (space_test - self.spaces) != 0:
+                    if space_test > self.spaces:
+                        for i in range(int(abs(space_test-self.spaces))):
+                            cur_token=chocoToken.Token()
+                            cur_token.name = ' '
+                            cur_token.type = "DENT"
+                            cur_token.print_token()
+                    else:
+                        for i in range(int(abs(space_test-self.spaces))):
+                            cur_token=chocoToken.Token()
+                            cur_token.name = ' '
+                            cur_token.type = "DESDENT"
+                            cur_token.print_token()
+                    self.spaces = space_test
 
             self.update_cur_char()
             jump=True
