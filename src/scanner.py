@@ -34,9 +34,7 @@ class Scanner:
             if self.cur_char.isalpha():     #Identify if is a keyword or ID
                 self.cur_word+=self.cur_char
                 while next_char!=False and (next_char.isalpha() or next_char.isdecimal() or next_char == '_'):  #We acumulate the word until there's no alpha character
-                    self.get_char()
-                    self.cur_word+=self.cur_char 
-                    next_char = self.peek_char()
+                    next_char = self.step_up()
                 self.token_in_line = True
                 if dic.keywords.get(self.cur_word) != None:     #Verify if it's a Keyword, else ID
                     cur_token.set_info(self.cur_word,"KEYWORD",self.idx_line,self.idx_char)
@@ -47,18 +45,14 @@ class Scanner:
             elif self.cur_char.isdecimal():
                 self.cur_word+=self.cur_char
                 while next_char!=False and next_char.isdecimal():  #We acumulate the word until there's no alpha character
-                    self.get_char()
-                    self.cur_word+=self.cur_char 
-                    next_char = self.peek_char()
+                    next_char = self.step_up()
                 if not next_char.isalpha() and 2147483647>=int(self.cur_word):
                     cur_token.set_info(self.cur_word,"INTEGER",self.idx_line,self.idx_char)
                     self.token_in_line = True
                     cur_token.print_token()
                 else:
                     while next_char!= False and (next_char.isalpha() or next_char.isdecimal()):
-                        self.get_char()
-                        self.cur_word+=self.cur_char 
-                        next_char = self.peek_char()
+                        next_char = self.step_up()
                     self.print_error()
 
             elif dic.operators.get(acumulate) or dic.bin_op.get(acumulate):
@@ -91,9 +85,7 @@ class Scanner:
                 self.cur_word += self.cur_char
                 error = False
                 while not error and (next_char!="\"" and next_char!="\'" or self.cur_char == "\\"):
-                    self.get_char()
-                    self.cur_word+=self.cur_char 
-                    next_char=self.peek_char()
+                    next_char=self.step_up()
                     if next_char == False or (self.cur_char == "\\" and (next_char !="\"" and next_char != "\'")) or next_char == "\n":
                         error = True
                 if next_char != False:
@@ -106,9 +98,7 @@ class Scanner:
                     cur_token.print_token()
                 if error:
                     while next_char!= False and next_char!=" " and next_char!="\n":
-                        self.get_char()
-                        self.cur_word+=self.cur_char 
-                        next_char = self.peek_char()
+                        next_char = self.step_up()
                     self.print_error()
             self.cur_word = ''
 
@@ -120,6 +110,9 @@ class Scanner:
             else:
                 self.get_char()           #We get the next char for the following iterations
     
+    def update_cur_char(self):
+        self.cur_char = self.lines[self.idx_line][self.idx_char]
+
     def get_char(self):    #Moves the current char to the next char if it exists, otherwise return False
         if self.cur_char != '\n':
             self.idx_char += 1
@@ -135,9 +128,19 @@ class Scanner:
             return self.lines[self.idx_line+1][0]
         else:
             return False
+    def step_up(self):  #Pass to the next character
+        self.get_char()
+        self.cur_word+=self.cur_char 
+        return self.peek_char()
 
     def jump_line(self): #We jump to the next line, if there was a token in the previous line we create a literal
         jump = False
+        if self.token_in_line:
+            literal = chocoToken.Token()
+            literal.set_info("NEWLINE","LITERAL",self.idx_line,self.idx_char)
+            literal.print_token()
+            self.token_in_line = False
+
         if self.total_lines-1 > self.idx_line:
             self.idx_line+=1
             self.idx_char = 0
@@ -152,14 +155,12 @@ class Scanner:
                     if space_test > self.spaces:
                         for i in range(int(abs(space_test-self.spaces))):
                             cur_token=chocoToken.Token()
-                            cur_token.name = ' '
-                            cur_token.type = "DENT"
+                            cur_token.set_info("","INDENT",self.idx_line,self.idx_char)
                             cur_token.print_token()
                     else:
                         for i in range(int(abs(space_test-self.spaces))):
                             cur_token=chocoToken.Token()
-                            cur_token.name = ' '
-                            cur_token.type = "DESDENT"
+                            cur_token.set_info("","DEDENT",self.idx_line,self.idx_char)
                             cur_token.print_token()
                     self.spaces = space_test
 
@@ -167,24 +168,15 @@ class Scanner:
             jump=True
         else: 
             self.end_doc = True
-        if self.token_in_line:
-            literal = chocoToken.Token()
-            literal.set_info("NEWLINE","LITERAL",self.idx_line,self.idx_char)
-            literal.print_token()
-            self.token_in_line = False
         return jump
     
-    def print_error(self):
+    def print_error(self):   #We print errors aligned
         self.errors +=1
         if self.cur_word[-1]=='\n': 
             self.cur_word = self.cur_word[:-1]
         space_occupied = len(self.cur_word)
         spaces_to_align = " "*max(0,16-space_occupied)
         print("ERROR",self.cur_word,"is not recognized",spaces_to_align,"FOUND AT (",self.idx_line,":",self.idx_char,")")
-
-    def update_cur_char(self):
-        self.cur_char = self.lines[self.idx_line][self.idx_char]
-
 
     def __del__(self):
         if self.file != None:
