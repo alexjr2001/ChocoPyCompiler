@@ -1,4 +1,5 @@
 # A broken program
+ #Comment
 def is_even(x:int) -> bool:
     if x % 2 == 1:
         return 0      # FIXME
@@ -6,3 +7,5 @@ def is_even(x:int) -> bool:
         return True
 
 print(is_even("3"))   # FIXME
+"FalseString
+"StringTest  "    ""  
