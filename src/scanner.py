@@ -54,7 +54,10 @@ class Scanner:
                     while next_char!= False and (next_char.isalpha() or next_char.isdecimal()):
                         next_char = self.step_up()
                     self.print_error()
-
+            
+            #We create these functions to detect operators that can be useful with binary or other chars
+            #We used dic to make easier the search 
+            #Then we create tockens and identify them
             elif dic.operators.get(acumulate) or dic.bin_op.get(acumulate):
                 self.cur_word = acumulate
 
@@ -62,9 +65,6 @@ class Scanner:
                     cur_token.set_info(self.cur_word,"OPERATOR",self.idx_line,self.idx_char)
                 elif dic.bin_op.get(self.cur_word) != None:
                     cur_token.set_info(self.cur_word,"BIN OPERATOR",self.idx_line,self.idx_char)
-                #else:
-                    #ERROR
-
                 self.token_in_line = True
                 self.get_char()
                 cur_token.print_token()
@@ -76,8 +76,6 @@ class Scanner:
                     cur_token.set_info(self.cur_word,"OPERATOR",self.idx_line,self.idx_char)
                 elif dic.bin_op.get(self.cur_word) != None:
                     cur_token.set_info(self.cur_word,"BIN OPERATOR",self.idx_line,self.idx_char)
-                #else:
-                    #ERROR
                 self.token_in_line = True
                 cur_token.print_token()
             
@@ -100,7 +98,12 @@ class Scanner:
                     while next_char!= False and next_char!=" " and next_char!="\n":
                         next_char = self.step_up()
                     self.print_error()
+            elif (self.cur_char != '#' and self.cur_char != '\n' and self.cur_char != ' '):
+                self.cur_word = self.cur_char
+                self.print_error()
+
             self.cur_word = ''
+            
 
             if next_char == False:          #If nextchar is False means it's the end of the txt
                 self.end_doc = True
@@ -144,25 +147,8 @@ class Scanner:
         if self.total_lines-1 > self.idx_line:
             self.idx_line+=1
             self.idx_char = 0
-            space_test = 0
 
-            while self.lines[self.idx_line][self.idx_char] == ' ':
-                space_test += 1
-                self.idx_char += 1
-            if self.lines[self.idx_line][self.idx_char] != ' ' and self.lines[self.idx_line][self.idx_char] != '\n':
-                space_test = space_test/4
-                if (space_test - self.spaces) != 0:
-                    if space_test > self.spaces:
-                        for i in range(int(abs(space_test-self.spaces))):
-                            cur_token=chocoToken.Token()
-                            cur_token.set_info("","INDENT",self.idx_line,self.idx_char)
-                            cur_token.print_token()
-                    else:
-                        for i in range(int(abs(space_test-self.spaces))):
-                            cur_token=chocoToken.Token()
-                            cur_token.set_info("","DEDENT",self.idx_line,self.idx_char)
-                            cur_token.print_token()
-                    self.spaces = space_test
+            self.indent_dedent()    #Here we identify if there was indens or dedents because we are starting a new line
 
             self.update_cur_char()
             jump=True
@@ -170,13 +156,30 @@ class Scanner:
             self.end_doc = True
         return jump
     
+    def indent_dedent(self):
+        space_test = 0              #We'll save the amount of spaces the new line have until it reach a char
+        while self.lines[self.idx_line][self.idx_char] == ' ':
+                space_test += 1
+                self.idx_char += 1
+        if self.lines[self.idx_line][self.idx_char] != ' ' and self.lines[self.idx_line][self.idx_char] != '\n':    #If the line has no char, we just jump
+            space_test = space_test/4                                                                               #to the next line
+            if (space_test - self.spaces) != 0:                                                                     #We know that a dent is made up                                   
+                for i in range(int(abs(space_test-self.spaces))):                                                   #of 4 spaces, that's why we devided  
+                    cur_token=chocoToken.Token()                                                                    #the spaces in line by that number
+                    if space_test > self.spaces:                                                                    #It's possible that we found out that
+                        cur_token.set_info("","INDENT",self.idx_line,self.idx_char)                                 #more than one functions is closed  
+                    else:                                                                                           #that's the reason why we need to 
+                        cur_token.set_info("","DEDENT",self.idx_line,self.idx_char)                                 #make it a loop
+                    cur_token.print_token()                                                                     
+                self.spaces = space_test
+
     def print_error(self):   #We print errors aligned
         self.errors +=1
         if self.cur_word[-1]=='\n': 
             self.cur_word = self.cur_word[:-1]
         space_occupied = len(self.cur_word)
         spaces_to_align = " "*max(0,16-space_occupied)
-        print("ERROR",self.cur_word,"is not recognized",spaces_to_align,"FOUND AT (",self.idx_line,":",self.idx_char,")")
+        print("ERROR",self.cur_word,"is not recognized",spaces_to_align,"FOUND AT (",self.idx_line + 1,":",self.idx_char,")")
 
     def __del__(self):
         if self.file != None:
