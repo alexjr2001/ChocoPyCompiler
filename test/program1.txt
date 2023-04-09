@@ -5,7 +5,7 @@ def is_even(x:int) -> bool:
         return 0      # FIXME
     else:
         return True
-
+            
 print(is_even("3"))   # FIXME
 "FalseString
 "StringTest  "    ""  

@@ -5,7 +5,7 @@ class Token:
         self.type = _type
         self.line = 0
         self.column = 0
-    def set_info(self,_name="",_type="",_line="",_column=""):
+    def set_info(self,_name="",_type="",_line=0,_column=0):
         self.name = _name
         self.type = _type
         self.line = _line
