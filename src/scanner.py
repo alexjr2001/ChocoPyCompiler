@@ -10,6 +10,7 @@ class Scanner:
         self.idx_line = 0
         self.idx_char = 0
         self.total_lines = 0
+        self.spaces = 0
         self.errors = 0
         self.end_doc = False
 
@@ -25,7 +26,7 @@ class Scanner:
         
         while not self.end_doc:
             acumulate = ''
-            if self.peek_char() != False:  
+            if self.peek_char() != False: 
                 acumulate = self.cur_char + self.peek_char()
             cur_token=chocoToken.Token()  # We create token in every iteration
 
@@ -140,9 +141,31 @@ class Scanner:
         if self.total_lines-1 > self.idx_line:
             self.idx_line+=1
             self.idx_char = 0
+            space_test = 0
+
+            while self.lines[self.idx_line][self.idx_char] == ' ':
+                space_test += 1
+                self.idx_char += 1
+            if self.lines[self.idx_line][self.idx_char] != ' ' and self.lines[self.idx_line][self.idx_char] != '\n':
+                space_test = space_test/4
+                if (space_test - self.spaces) != 0:
+                    if space_test > self.spaces:
+                        for i in range(int(abs(space_test-self.spaces))):
+                            cur_token=chocoToken.Token()
+                            cur_token.name = ' '
+                            cur_token.type = "DENT"
+                            cur_token.print_token()
+                    else:
+                        for i in range(int(abs(space_test-self.spaces))):
+                            cur_token=chocoToken.Token()
+                            cur_token.name = ' '
+                            cur_token.type = "DESDENT"
+                            cur_token.print_token()
+                    self.spaces = space_test
+
             self.update_cur_char()
             jump=True
-        else:
+        else: 
             self.end_doc = True
         if self.token_in_line:
             literal = chocoToken.Token()
