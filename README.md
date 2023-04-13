@@ -17,7 +17,11 @@ $ pip install pyfiglet
 ## Compiler Structure
 
 ### - Scanner or Tokenizer
-Our scanner is going to receive help from a class called [chocoToken](https://github.com/alexjr2001/ChocoPyCompiler/blob/main/src/chocoToken.py) in order to get an organize and comprehensible code. This simple class will store the information of a token and it will print it out when it will be required. In the other hand, our class Scanner will open foremost a file and then it's going to start the scanning applying the 'getTokens' function. Therefore, it'll grab token (or word) by token and a process of conditionals sentences will start to find if it belongs to any type and if so will print it out with its respective name and type, otherwise, it is going to be an error with a simple specification. Everything is achieved largely by two useful functions such as get_char() and peek_char(), the first one is going to move 'the pointer' to the next char and the second one is going to say what is in the next char without moving 'the pointer'. Besides we have jump_line().
+Our scanner is going to receive help from a class called [chocoToken](https://github.com/alexjr2001/ChocoPyCompiler/blob/main/src/chocoToken.py) in order to get an organize and comprehensible code. This simple class will store the information of a token and it will print it out when it will be required. In the other hand, our class Scanner will open foremost a file and then it's going to start the scanning applying the 'getTokens' function. Therefore, it'll grab token (or word) by token and a process of conditionals sentences will start to find if it belongs to any type and if so will print it out with its respective name and type, otherwise, it is going to be an error with a simple specification.
+
+<p align="center"><img width="421" alt="image" src="https://user-images.githubusercontent.com/63054183/231651433-087784c7-e2ab-4751-9193-f9b840c055d6.png"></p>
+
+Everything is achieved largely by two useful functions such as get_char() and peek_char(), the first one is going to move 'the pointer' to the next char and the second one is going to say what is in the next char without moving 'the pointer'. Besides we have jump_line().
 
 
 ### Running the project
