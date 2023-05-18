@@ -62,24 +62,12 @@ class Scanner:
             #Then we create tockens and identify them
             elif dic.operators.get(acumulate) or dic.bin_op.get(acumulate):
                 self.cur_word = acumulate
-
-                if dic.operators.get(self.cur_word) != None:
-                    cur_token.set_info(self.cur_word,"OPERATOR",self.idx_line,self.idx_char)
-                elif dic.bin_op.get(self.cur_word) != None:
-                    cur_token.set_info(self.cur_word,"BIN OPERATOR",self.idx_line,self.idx_char)
-                self.token_in_line = True
+                self.operator_token(cur_token)
                 self.get_char()
-                cur_token.print_token()
             
             elif dic.operators.get(self.cur_char) or dic.bin_op.get(self.cur_char):
                 self.cur_word = self.cur_char
-
-                if dic.operators.get(self.cur_word) != None:
-                    cur_token.set_info(self.cur_word,"OPERATOR",self.idx_line,self.idx_char)
-                elif dic.bin_op.get(self.cur_word) != None:
-                    cur_token.set_info(self.cur_word,"BIN OPERATOR",self.idx_line,self.idx_char)
-                self.token_in_line = True
-                cur_token.print_token()
+                self.operator_token(cur_token)
             
             elif self.cur_char == "\"" or self.cur_char == "\'":
                 self.cur_word += self.cur_char
@@ -158,6 +146,14 @@ class Scanner:
             self.end_doc = True
         return jump
     
+    def operator_token(self,cur_token):
+        if dic.operators.get(self.cur_word) != None:
+            cur_token.set_info(self.cur_word,"OPERATOR",self.idx_line,self.idx_char)
+        elif dic.bin_op.get(self.cur_word) != None:
+            cur_token.set_info(self.cur_word,"BIN OPERATOR",self.idx_line,self.idx_char)
+        self.token_in_line = True
+        cur_token.print_token()
+
     def indent_dedent(self):
         space_test = 0              #We'll save the amount of spaces the new line have until it reach a char
         while self.lines[self.idx_line][self.idx_char] == ' ':
