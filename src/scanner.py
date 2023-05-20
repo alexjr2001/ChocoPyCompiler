@@ -44,7 +44,7 @@ class Scanner:
                 else:
                     cur_token.set_info(self.cur_word,"ID",self.idx_line,self.idx_char)
                 cur_token.print_token()
-                self.tokens.append(cur_token.type)
+                self.tokens.append(cur_token)
 
             elif self.cur_char.isdecimal():
                 self.cur_word+=self.cur_char
@@ -54,7 +54,7 @@ class Scanner:
                     cur_token.set_info(self.cur_word,"INTEGER",self.idx_line,self.idx_char)
                     self.token_in_line = True
                     cur_token.print_token()
-                    self.tokens.append(cur_token.type)
+                    self.tokens.append(cur_token)
                 else:
                     while next_char!= False and (next_char.isalpha() or next_char.isdecimal()):
                         next_char = self.step_up()
@@ -87,7 +87,7 @@ class Scanner:
                     cur_token.set_info(self.cur_word,"STRING",self.idx_line,self.idx_char)
                     self.token_in_line = True
                     cur_token.print_token()
-                    self.tokens.append(cur_token.type)
+                    self.tokens.append(cur_token)
                 if error:
                     while next_char!= False and next_char!=" " and next_char!="\n":
                         next_char = self.step_up()
@@ -136,7 +136,7 @@ class Scanner:
             literal = chocoToken.Token()
             literal.set_info("NEWLINE","LITERAL",self.idx_line,self.idx_char)
             literal.print_token()
-            self.tokens.append(literal.type)
+            self.tokens.append(literal)
             self.token_in_line = False
 
         if self.total_lines-1 > self.idx_line:
@@ -158,7 +158,7 @@ class Scanner:
             cur_token.set_info(self.cur_word,"BIN OPERATOR",self.idx_line,self.idx_char)
         self.token_in_line = True
         cur_token.print_token()
-        self.tokens.append(cur_token.type)
+        self.tokens.append(cur_token)
 
     def indent_dedent(self):
         space_test = 0              #We'll save the amount of spaces the new line have until it reach a char
@@ -175,7 +175,7 @@ class Scanner:
                     else:                                                                                           #that's the reason why we need to 
                         cur_token.set_info("","DEDENT",self.idx_line,self.idx_char)                                 #make it a loop
                     cur_token.print_token()    
-                    self.tokens.append(cur_token.type)                                                                 
+                    self.tokens.append(cur_token)                                                                 
                 self.spaces = space_test
 
     def print_error(self):   #We print errors aligned
@@ -189,4 +189,4 @@ class Scanner:
     def __del__(self):
         if self.file != None:
             self.file.close()
-        print("INFO SCAN COMPLETED WITH ", self.errors, "ERRORS")
+        print("INFO SCAN COMPLETED WITH", self.errors, "ERRORS")
