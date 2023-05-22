@@ -22,8 +22,11 @@ class Parser:
         print(pyfiglet.figlet_format("PARSER", font = "slant"))
     
     def getToken(self):
-        if(self.idx_token+1<len(self.tokens)):
-            self.cur_token = self.tokens[self.idx_token+1]
+        if self.cur_token != None and self.cur_token.name=='$':
+            self.__del__()
+        elif (self.idx_token+1<len(self.tokens)):
+            self.idx_token+=1
+            self.cur_token = self.tokens[self.idx_token]
         else:
             self.__del__()
     
@@ -31,8 +34,22 @@ class Parser:
         if(self.idx_token+1<len(self.tokens)):
             return self.tokens[self.idx_token+1]
         return False
-
-    def verifyFollows(self,nonterm):    ###FOLLLOWS
+    
+    def check_term(self,terminal):
+        nextToken=self.peekToken()
+        if nextToken != False:
+            if terminal in ["STRING","INTEGER","ID","DEDENT","INDENT"]:
+                if nextToken.type== terminal:
+                    self.getToken()
+                    return True
+            else:
+                if nextToken.name == terminal:
+                    self.getToken()
+                    return True
+        return False
+    def verifyFollows(self,nonterm,back=0):    ###FOLLLOWS
+        self.idx_token-=back
+        self.cur_token=self.tokens[self.idx_token]
         if self.peekToken() != False:
             if nonterm.get(self.peekToken().name):
                 return True
@@ -42,14 +59,15 @@ class Parser:
 
             
     def errorManage(self,syncFunction):   ##We pass a function which have to be called after the newline
+        if self.idx_token<len(self.tokens)-1:
+            self.idx_token+=1
+            self.cur_token=self.tokens[self.idx_token]
         self.print_error()
-        self.idx_token+=1
-        self.cur_token=self.tokens[self.idx_token]
         while self.idx_token<len(self.tokens)-1 and self.tokens[self.idx_token+1] != "NEWLINE":  #Verify if we're in newline to continue to parse or is the last line to finish de parse
             self.idx_token+=1
             self.cur_token=self.tokens[self.idx_token]
-        return syncFunction()
-    
+        return syncFunction
+       
     def print_error(self):
         self.n_errors +=1
         space_occupied = len(self.cur_token.name)
@@ -75,43 +93,36 @@ class Parser:
         elif self.verifyFollows(flws.defList):
             return True
         
-        else: 
-            return self.errorManage(self.block())		##El unico errorMessage no funciona aun
+        return self.errorManage(self.block())		##El unico errorMessage no funciona aun
     
-    def _def(self):
-        self.getToken()   
-        if self.cur_token.name == "def":
-            self.getToken()   
-            if self.cur_token.type == "ID":
-                self.getToken()
-                if self.cur_token.name == "(":
+    def _def(self):   
+        if self.check_term("def"):
+            if self.check_term("ID"):
+                if self.check_term("("):
                     if self.typedVarList():
-                        self.getToken()
-                        if self.cur_token.name == ")":
+                        if self.check_term(")"):
                             if self._return():
-                                self.getToken()
-                                if self.cur_token.name == ":":
+                                if self.check_term(":"):
                                     if self.block():
-                                        return True     
+                                        return True
+        
+        #return self.errorManage(self.block())		##El unico errorMessage no funciona aun
+             
     
     def typedVar(self):
-        self.getToken()
-        if self.cur_token.type == "ID":
-            self.getToken()
-            if  self.cur_token.name ==":":
+        if self.check_term("ID"):
+            if  self.check_term(":"):
                 if self._type():
                     return True
     
     def _type(self):
-        self.getToken()
-        if self.cur_token.name == "int":
+        if self.check_term("int"):
             return True
-        if self.cur_token.name == "str":
+        if self.check_term("str"):
             return True
-        if self.cur_token.name == "[":
+        if self.check_term("["):
             if self._type():
-                self.getToken()
-                if self.cur_token.name == "]":
+                if self.check_term("]"):
                     return True
     
     def typedVarList(self):   ##Puede ser vacío FOLLOW
@@ -124,8 +135,7 @@ class Parser:
         #########
     
     def typedVarListTail(self): ##Puede ser vacío FOLLOW
-        self.getToken()
-        if self.cur_token.name == ",":
+        if self.check_term(","):
             if self.typedVar():
                 if self.typedVarListTail():
                     return True
@@ -134,8 +144,7 @@ class Parser:
             return True
     
     def _return(self):  ##Puede ser vacío FOLLOW
-        self.getToken()
-        if self.cur_token.name == "->":
+        if self.check_term("->"):
             if self._type():
                 return True
 
@@ -143,14 +152,11 @@ class Parser:
             return True
     
     def block(self):
-        self.getToken()
-        if self.cur_token.name == "NEWLINE":
-            self.getToken()
-            if self.cur_token.type == "INDENT":
+        if self.check_term("NEWLINE"):
+            if self.check_term("INDENT"):
                 if self.stmt():
                     if self.stmtList():
-                        self.getToken()
-                        if self.cur_token.type == "DEDENT":
+                        if self.check_term("DEDENT"):
                             return True                   
     
     def stmtList(self):   ##Puede ser vacío FOLLOW
@@ -162,57 +168,47 @@ class Parser:
             return True
     
     def stmt(self):
-        self.getToken()
         if self.simpleStmt():
-            if self.cur_token.name == "NEWLINE":
+            if self.check_term("NEWLINE"):
                 return True
-        elif self.cur_token.name == "if":
+        elif self.check_term("if"):
             if self.expr():
-                self.getToken()
-                if self.cur_token.name == ":":
+                if self.check_term(":"):
                     if self.block():
                         if self.elifList():
                             if self._else():
                                 return True
-        elif self.cur_token.name == "while":
+        elif self.check_term("while"):
             if self.expr():
-                self.getToken()
-                if self.cur_token.name == ":":
+                if self.check_term(":"):
                     if self.block():
                         return True
-        elif self.cur_token.name =="for":
-            self.getToken()
-            if self.cur_token.type =="ID":
-                self.getToken()
-                if self.cur_token.name =="in":
+        elif self.check_term("for"):
+            if self.check_term("ID"):
+                if self.check_term("in"):
                     if self.expr():
-                        self.getToken()
-                        if self.cur_token.name == ":":
+                        if self.check_term(":"):
                             if self.block():
                                 return True
     
     def elifList(self):   ##Puede ser vacío FOLLOW
         if self._elif():
-            if self._elifList():
+            if self.elifList():
                 return True
             
         elif self.verifyFollows(flws.elifList):
             return True
     
     def _elif(self):
-        self.getToken()
-        if self.cur_token.name =="elif":
+        if self.check_term("elif"):
             if self.expr():
-                self.getToken()
-                if self.cur_token.name ==":":
+                if self.check_term(":"):
                     if self.block():
                         return True
     
     def _else(self):    ##Puede ser vacío FOLLOW
-        self.getToken()
-        if self.cur_token.name == "else":
-            self.getToken()
-            if self.cur_token.name == ":":
+        if self.check_term("else"):
+            if self.check_term(":"):
                 if self.block():
                     return True
         
@@ -221,18 +217,16 @@ class Parser:
     
     def simpleStmt(self):
             if self.expr():
-               if self.ssTail():
+                if self.ssTail():
                    return True
-            self.getToken()
-            if self.cur_token.name == "pass":
+            if self.check_term("pass"):
                 return True
-            if self.cur_token.name == "return":
+            if self.check_term("return"):
                 if self.returnExpr():
                     return True
     
     def ssTail(self):       ##Puede ser vacío FOLLOW
-        self.getToken()
-        if self.cur_token.name == "=":
+        if self.check_term("="):
             if self.expr():
                 return True
         
@@ -252,11 +246,9 @@ class Parser:
                 return True
     
     def exprPrime(self):      ##Puede ser vacío FOLLOW
-        self.getToken()
-        if self.cur_token.name =="if":
+        if self.check_term("if"):
             if self.andExpr():
-                self.getToken()
-                if self.cur_token.name =="else":
+                if self.check_term("else"):
                     if self.andExpr():
                         if self.exprPrime():
                             return True
@@ -270,8 +262,7 @@ class Parser:
                 return True
             
     def orExprPrime(self):    ##Puede ser vacío FOLLOW
-        self.getToken()
-        if self.cur_token.name == "or":
+        if self.check_term("or"):
             if self.andExpr():
                 if self.orExprPrime():
                     return True
@@ -285,8 +276,7 @@ class Parser:
                 return True
             
     def andExprPrime(self):            ##Puede ser vacío FOLLOW
-        self.getToken()
-        if self.cur_token.name == "and":
+        if self.check_term("and"):
             if self.notExpr():
                 if self.andExprPrime():
                     return True
@@ -299,8 +289,7 @@ class Parser:
             if self.notExprPrime():
                 return True
     def notExprPrime(self):       ##Puede ser vacío FOLLOW
-        self.getToken()
-        if self.cur_token.name == "not":
+        if self.check_term("not"):
             if self.compExpr():
                 if self.notExprPrime():
                     return True
@@ -328,8 +317,7 @@ class Parser:
                 return True
 
     def intExprPrime(self):     ##Puede ser vacío FOLLOW
-        self.getToken()
-        if self.cur_token.name == "+" or self.cur_token.name == "-":
+        if self.check_term("+") or self.check_term("-"):
             if self.term():
                 if self.intExprPrime():
                     return True
@@ -343,8 +331,7 @@ class Parser:
                 return True
     
     def termPrime(self):        ##Puede ser vacío FOLLOW
-        self.getToken()
-        if self.cur_token.name == "*" or self.cur_token.name == "//" or self.cur_token.name =="%":
+        if self.check_term("*") or self.check_term("//") or self.check_term("%"):
             if self.factor():
                 if self.termExprPrime():
                     return True
@@ -353,51 +340,43 @@ class Parser:
             return True
     
     def factor(self):
+        
         if self.name() or self.literal() or self._list():
             return True
-        self.getToken()
-        if self.cur_token.name == "-":
+        if self.check_term("-"):
             if self.factor():
                 return True
-        self.getToken()
-        if self.cur_token.name == "(":
+        if self.check_term("("):
             if self.expr():
-                self.getToken()
-                if self.cur_token.name == ")":
+                if self.check_term(")"):
                     return True
     
     def name(self):
-        self.getToken()
-        if self.cur_token.type == "ID":
+        if self.check_term("ID"):
             if self.nameTail():
                 return True
     
     def nameTail(self):         ##Puede ser vacío FOLLOW
         if self._list():
             return True
-        self.getToken()
-        if self.cur_token.name == "(":
+        if self.check_term("("):
             if self.exprList():
-                self.getToken()
-                if self.cur_token.name == ")":
+                if self.check_term(")"):
                     return True
         
         elif self.verifyFollows(flws.nameTail):     #Está bien posicionado?
             return True
                 
     def literal(self):
-        self.getToken()
-        if self.cur_token.name == "None" or self.cur_token.name == "True" or self.cur_token.name == "False" or self.cur_token.type == "INTEGER" or self.cur_token.type == "STRING":
+        if self.check_term("None") or self.check_term("True") or self.check_term("False") or self.check_term("INTEGER") or self.check_term("STRING"):
             return True
     
     def _list(self):
-        self.getToken()
-        if self.cur_token.name == "[":
+        if self.check_term("["):
             if self.exprList():
-                self.getToken()
-                if self.cur_token.name == "]":
+                if self.check_term("]"):
                     return True
-    
+        #Retrocedo
     def exprList(self):     ##Puede ser vacío FOLLOW
         if self.expr():
             if self.exprListTail():
@@ -407,8 +386,7 @@ class Parser:
             return True
     
     def exprListTail(self):     ##Puede ser vacío FOLLOW
-        self.getToken()
-        if self.cur_token.name == ",":
+        if self.check_term(","):
             if self.expr():
                 if self.exprListTail():
                     return True
@@ -417,8 +395,7 @@ class Parser:
             return True
                 
     def compOp(self):
-        self.getToken()
-        if self.cur_token.name == "==" or self.cur_token.name == "!=" or self.cur_token.name == "<" or self.cur_token.name == ">" or self.cur_token.name == "<=" or self.cur_token.name == ">=" or self.cur_token.name == "is":
+        if self.check_term("==") or self.check_term("!=") or self.check_term("<") or self.check_term(">") or self.check_term("<=") or self.check_term(">=") or self.check_term("is"):
             return True
         
     def __del__(self):
