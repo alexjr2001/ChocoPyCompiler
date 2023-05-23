@@ -1,17 +1,19 @@
-def func(a:int) -> int:
+df func(a:int) -> int:
+    return 8
+def func(a : int) -> int:
     for a in [3,4,5,6]:
         a = 2
     while a==b:   ##4*3
         return a
     if a is 2 or b!=False:
-        return a
+        a+5=a+
     elif b<=4:
-         return 4
-    elif c4>=5:
-        return b
+        return a
+    elif <=4:
+        return return
     else:
         return c4
 
-def func(a:int) -> int:
+def funca:int) -> int:
     return a
 #Fin

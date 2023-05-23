@@ -47,8 +47,7 @@ class Parser:
                     self.getToken()
                     return True
         return False
-    def verifyFollows(self,nonterm,back=0):    ###FOLLLOWS
-        self.idx_token-=back
+    def verifyFollows(self,nonterm):    ###FOLLLOWS
         self.cur_token=self.tokens[self.idx_token]
         if self.peekToken() != False:
             if nonterm.get(self.peekToken().name):
@@ -57,16 +56,26 @@ class Parser:
                 return True
         return False
 
-            
-    def errorManage(self,syncFunction):   ##We pass a function which have to be called after the newline
-        if self.idx_token<len(self.tokens)-1:
+    def reTrue(self):
+        return True
+
+    def errorManage(self,syncFunction,front=0):   ##We pass a function which have to be called after the newline
+        if self.idx_token<len(self.tokens)-1 and self.tokens[self.idx_token+1].name!="NEWLINE":
             self.idx_token+=1
             self.cur_token=self.tokens[self.idx_token]
-        self.print_error()
-        while self.idx_token<len(self.tokens)-1 and self.tokens[self.idx_token+1] != "NEWLINE":  #Verify if we're in newline to continue to parse or is the last line to finish de parse
-            self.idx_token+=1
-            self.cur_token=self.tokens[self.idx_token]
-        return syncFunction
+        #print("1 ",self.cur_token.print_token())
+        #print("name: ", self.cur_token.name)
+        if self.cur_token.name != "$": 
+            self.print_error()
+            while self.idx_token<len(self.tokens)-1 and self.tokens[self.idx_token+1].name != "NEWLINE":  #Verify if we're in newline to continue to parse or is the last line to finish de parse
+                self.idx_token+=1
+                self.cur_token=self.tokens[self.idx_token]
+            if self.idx_token<len(self.tokens)-1 and self.tokens[self.idx_token+1].name == "NEWLINE":
+                self.idx_token+=front
+                self.cur_token=self.tokens[self.idx_token]
+            #print("2 ",self.cur_token.print_token())
+            return syncFunction()
+       # print("3 ",self.cur_token.print_token())
        
     def print_error(self):
         self.n_errors +=1
@@ -93,7 +102,8 @@ class Parser:
         elif self.verifyFollows(flws.defList):
             return True
         
-        return self.errorManage(self.block())		##El unico errorMessage no funciona aun
+        
+        #return self.errorManage(self.block)		##El unico errorMessage no funciona aun
     
     def _def(self):   
         if self.check_term("def"):
@@ -105,10 +115,11 @@ class Parser:
                                 if self.check_term(":"):
                                     if self.block():
                                         return True
-        
-        #return self.errorManage(self.block())		##El unico errorMessage no funciona aun
-             
-    
+        if flws.defList.get(self.peekToken().name)==None:
+            if self.idx_token!=0:
+                return self.errorManage(self.block)		##El unico errorMessage no funciona aun
+            else:
+                return self.errorManage(self.defList)
     def typedVar(self):
         if self.check_term("ID"):
             if  self.check_term(":"):
@@ -152,6 +163,7 @@ class Parser:
             return True
     
     def block(self):
+        #print("Llama")
         if self.check_term("NEWLINE"):
             if self.check_term("INDENT"):
                 if self.stmt():
@@ -178,11 +190,28 @@ class Parser:
                         if self.elifList():
                             if self._else():
                                 return True
+                        #if self.errorManage(self.block) and self.elifList():		##El unico errorMessage no funciona aun
+                        #    if self._else():
+                        #        return True
+            if self.errorManage(self.block) and self.elifList():
+                if self._else():
+                    return True
+            #cadena=False
+            #while self.errorManage(self.block):
+            #    if self.elifList()!=None:
+            #        cadena=True
+            #    else:
+            #        break
+            #if cadena==True and self._else():
+            #    return True
+    
         elif self.check_term("while"):
             if self.expr():
                 if self.check_term(":"):
                     if self.block():
                         return True
+            return self.errorManage(self.block)		##El unico errorMessage no funciona
+                                        
         elif self.check_term("for"):
             if self.check_term("ID"):
                 if self.check_term("in"):
@@ -190,14 +219,18 @@ class Parser:
                         if self.check_term(":"):
                             if self.block():
                                 return True
+            return self.errorManage(self.block)		##El unico errorMessage no funciona
     
     def elifList(self):   ##Puede ser vacío FOLLOW
         if self._elif():
             if self.elifList():
                 return True
-            
-        elif self.verifyFollows(flws.elifList):
+            #return self.errorManage(self.stmtList,1)
+        elif self.verifyFollows(flws.elifList):  #ID 
             return True
+        if self.errorManage(self.block):		##El unico errorMessage no funciona aun
+            if self.elifList():
+                return True
     
     def _elif(self):
         if self.check_term("elif"):
@@ -205,6 +238,7 @@ class Parser:
                 if self.check_term(":"):
                     if self.block():
                         return True
+            return self.errorManage(self.block)	#Da error No porque puede ser un follow	##El unico errorMessage no funciona aun
     
     def _else(self):    ##Puede ser vacío FOLLOW
         if self.check_term("else"):
@@ -214,16 +248,23 @@ class Parser:
         
         elif self.verifyFollows(flws._else):
             return True
+
+        return self.errorManage(self.block)		##El unico errorMessage no funciona aun
     
     def simpleStmt(self):
-            if self.expr():
-                if self.ssTail():
-                   return True
-            if self.check_term("pass"):
+        if self.expr():
+            if self.ssTail():
                 return True
-            if self.check_term("return"):
-                if self.returnExpr():
-                    return True
+            else:
+                return self.errorManage(self.reTrue)
+        elif self.check_term("pass"):
+            return True
+        elif self.check_term("return"):
+            if self.returnExpr():
+                return True
+            else:
+                return self.errorManage(self.reTrue)
+            
     
     def ssTail(self):       ##Puede ser vacío FOLLOW
         if self.check_term("="):
@@ -333,7 +374,7 @@ class Parser:
     def termPrime(self):        ##Puede ser vacío FOLLOW
         if self.check_term("*") or self.check_term("//") or self.check_term("%"):
             if self.factor():
-                if self.termExprPrime():
+                if self.termPrime():
                     return True
             
         elif self.verifyFollows(flws.termPrime):
