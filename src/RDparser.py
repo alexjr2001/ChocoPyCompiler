@@ -5,6 +5,8 @@ import sys
 sys.path.append("../")
 from lib import dictionary as dic
 from lib import follows as flws
+from anytree import Node, RenderTree
+from anytree.exporter import UniqueDotExporter
 
 #Recursive descent parser class
 class Parser:
@@ -15,12 +17,20 @@ class Parser:
         self.tokens = self.scanner.tokens   #Lista de objetos token
         eof = chocoToken.Token('$','EOF')
         self.tokens.append(eof)
-        for i in self.tokens: 
-            print(i.name,"->",i.type)
+        #for i in self.tokens: 
+        #    print(i.name,"->",i.type)
         self.cur_token = None
         self.n_errors = 0
+        self.treeFile = open("../visual/Tree.txt","w",encoding="utf-8")
         print(pyfiglet.figlet_format("PARSER", font = "slant"))
     
+    
+
+    def render_tree(root: object) -> None:
+        for pre, fill, node in RenderTree(root):
+            print("%s%s" % (pre, node.name))
+
+
     def getToken(self):
         if self.cur_token != None and self.cur_token.name=='$':
             self.__del__()
@@ -85,18 +95,28 @@ class Parser:
     
     ##Grammar functions
     def program(self):
-        if self.defList():
-            if self.stmtList(): 
-                if self.n_errors == 0: 
-                    print("Grammar Accepted")
-                else:
-                    print("Grammar Not-Accepted")
-                return True
-         
+        Root= Node("Root");
+        if self.defList(Root):
+            if self.stmtList(Root): 
+                pass;
+        if self.n_errors == 0: 
+            print("Grammar Accepted")
+        else:
+            print("Grammar Not-Accepted")
+        
+        with self.treeFile as f:
+            print(RenderTree(Root).by_attr(),file=f)
+        UniqueDotExporter(Root).to_picture("../visual/TreeImg.png")
+        #self.treeFile.write()
+        #DotExporter(Root).to_dotfile("tree.dot")
+
+        return True
     
-    def defList(self):          ##Puede ser vacío FOLLOW
-        if self._def():
-            if self.defList():
+    def defList(self,parent=None):          ##Puede ser vacío FOLLOW
+        #newNode=Node("defList",parent)
+        #parent=newNode
+        if self._def(parent):
+            if self.defList(parent):
                 return True
         ###FOLLLOWS
         elif self.verifyFollows(flws.defList):
@@ -105,90 +125,133 @@ class Parser:
         
         #return self.errorManage(self.block)		##El unico errorMessage no funciona aun
     
-    def _def(self):   
+    def _def(self,parent=None):
         if self.check_term("def"):
+            newNode=Node("DEF",parent)
+            parent=newNode   
+            newNode=Node("def",parent)
             if self.check_term("ID"):
+                newNode=Node(self.cur_token.name,parent)
                 if self.check_term("("):
-                    if self.typedVarList():
+                    newNode=Node("(",parent)
+                    if self.typedVarList(parent):
                         if self.check_term(")"):
-                            if self._return():
+                            newNode=Node(")",parent)
+                            if self._return(parent):
                                 if self.check_term(":"):
-                                    if self.block():
+                                    newNode=Node(":",parent)
+                                    if self.block(parent):
                                         return True
         if flws.defList.get(self.peekToken().name)==None:
             if self.idx_token!=0:
                 return self.errorManage(self.block)		##El unico errorMessage no funciona aun
             else:
                 return self.errorManage(self.defList)
-    def typedVar(self):
+    def typedVar(self,parent=None):
+        newNode=Node("TYPEDVAR",parent)
+        parent=newNode
         if self.check_term("ID"):
+            newNode=Node(self.cur_token.name,parent)
             if  self.check_term(":"):
-                if self._type():
+                newNode=Node(":",parent)
+                if self._type(parent):
                     return True
     
-    def _type(self):
+    def _type(self,parent=None):
+        #newNode=Node("TYPE",parent)
+        #parent=newNode
         if self.check_term("int"):
+            newNode=Node("int",parent)
             return True
         if self.check_term("str"):
+            newNode=Node("str",parent)
             return True
         if self.check_term("["):
-            if self._type():
+            newNode=Node("[",parent)
+            if self._type(parent):
                 if self.check_term("]"):
+                    newNode=Node("]",parent)
                     return True
     
-    def typedVarList(self):   ##Puede ser vacío FOLLOW
-        if self.typedVar():
-            if self.typedVarListTail():
+    def typedVarList(self,parent=None):   ##Puede ser vacío FOLLOW
+        #newNode=Node("typedVarList",parent)
+        #parent=newNode
+        if self.typedVar(parent):
+            if self.typedVarListTail(parent):
                 return True
         ###FOLLLOWS
         elif self.verifyFollows(flws.typedVarList):
             return True
         #########
     
-    def typedVarListTail(self): ##Puede ser vacío FOLLOW
+    def typedVarListTail(self,parent=None): ##Puede ser vacío FOLLOW
+        #newNode=Node("typedVarListTail",parent)
+        #parent=newNode
         if self.check_term(","):
-            if self.typedVar():
-                if self.typedVarListTail():
+            newNode=Node(",",parent)
+            if self.typedVar(parent):
+                if self.typedVarListTail(parent):
                     return True
                 
         elif self.verifyFollows(flws.typedVarListTail):
             return True
     
-    def _return(self):  ##Puede ser vacío FOLLOW
+    def _return(self,parent=None):  ##Puede ser vacío FOLLOW
+        #newNode=Node("RETURN",parent)
+        #parent=newNode
         if self.check_term("->"):
-            if self._type():
+            newNode=Node("RETURN",parent)
+            parent=newNode
+            newNode=Node("->",parent)
+            if self._type(parent):
                 return True
 
         elif self.verifyFollows(flws._return):
             return True
     
-    def block(self):
+    def block(self,parent=None):
         #print("Llama")
+        #newNode=Node("BLOCK",parent)
+        #parent=newNode
         if self.check_term("NEWLINE"):
+            newNode=Node("BLOCK",parent)
+            parent=newNode
+            #newNode=Node("NEWLINE",parent)
             if self.check_term("INDENT"):
-                if self.stmt():
-                    if self.stmtList():
+                #newNode=Node("INDENT",parent)
+                if self.stmt(parent):
+                    if self.stmtList(parent):
                         if self.check_term("DEDENT"):
+                            #newNode=Node("DEDENT",parent)
                             return True                   
     
-    def stmtList(self):   ##Puede ser vacío FOLLOW
-        if self.stmt():
-            if self.stmtList():
+    def stmtList(self,parent=None):   ##Puede ser vacío FOLLOW
+        #newNode=Node("stmtList",parent)
+        #parent=newNode
+        if self.stmt(parent):
+            if self.stmtList(parent):
                 return True
             
         elif self.verifyFollows(flws.stmtList):
             return True
     
-    def stmt(self):
-        if self.simpleStmt():
+    def stmt(self,parent=None):
+        #newNode=Node("stmt",parent)
+        #parent=newNode
+        if self.simpleStmt(parent):
             if self.check_term("NEWLINE"):
+                #newNode=Node("NEWLINE",parent)
                 return True
         elif self.check_term("if"):
-            if self.expr():
+            newNode=Node("STMT",parent)
+            parent=newNode
+            newNode=Node("if",parent)
+            if self.expr(parent):
                 if self.check_term(":"):
-                    if self.block():
-                        if self.elifList():
-                            if self._else():
+                    newNode=Node(":",parent)
+                    if self.block(parent):
+                        if self.elifList(parent):
+                            if self._else(parent):
                                 return True
                         #if self.errorManage(self.block) and self.elifList():		##El unico errorMessage no funciona aun
                         #    if self._else():
@@ -196,54 +259,66 @@ class Parser:
             if self.errorManage(self.block) and self.elifList():
                 if self._else():
                     return True
-            #cadena=False
-            #while self.errorManage(self.block):
-            #    if self.elifList()!=None:
-            #        cadena=True
-            #    else:
-            #        break
-            #if cadena==True and self._else():
-            #    return True
     
         elif self.check_term("while"):
-            if self.expr():
+            newNode=Node("STMT",parent)
+            parent=newNode
+            newNode=Node("while",parent)
+            if self.expr(parent):
                 if self.check_term(":"):
-                    if self.block():
+                    newNode=Node(":",parent)
+                    if self.block(parent):
                         return True
             return self.errorManage(self.block)		##El unico errorMessage no funciona
                                         
         elif self.check_term("for"):
+            newNode=Node("STMT",parent)
+            parent=newNode
+            newNode=Node("for",parent)
             if self.check_term("ID"):
+                newNode=Node(self.cur_token.name,parent)
                 if self.check_term("in"):
-                    if self.expr():
+                    newNode=Node("in",parent)
+                    if self.expr(parent):
                         if self.check_term(":"):
-                            if self.block():
+                            newNode=Node(":",parent)
+                            if self.block(parent):
                                 return True
             return self.errorManage(self.block)		##El unico errorMessage no funciona
     
-    def elifList(self):   ##Puede ser vacío FOLLOW
-        if self._elif():
-            if self.elifList():
+    def elifList(self,parent=None):   ##Puede ser vacío FOLLOW
+        #newNode=Node("elifList",parent)
+        #parent=newNode
+        if self._elif(parent):
+            if self.elifList(parent):
                 return True
             #return self.errorManage(self.stmtList,1)
         elif self.verifyFollows(flws.elifList):  #ID 
             return True
         if self.errorManage(self.block):		##El unico errorMessage no funciona aun
-            if self.elifList():
+            if self.elifList(parent):
                 return True
     
-    def _elif(self):
+    def _elif(self,parent=None):
+        #newNode=Node("elif",parent)
+        #parent=newNode
         if self.check_term("elif"):
-            if self.expr():
+            newNode=Node("elif",parent)
+            if self.expr(parent):
                 if self.check_term(":"):
-                    if self.block():
+                    newNode=Node(":",parent)
+                    if self.block(parent):
                         return True
             return self.errorManage(self.block)	#Da error No porque puede ser un follow	##El unico errorMessage no funciona aun
     
-    def _else(self):    ##Puede ser vacío FOLLOW
+    def _else(self,parent=None):    ##Puede ser vacío FOLLOW
+        #newNode=Node("else",parent)
+        #parent=newNode
         if self.check_term("else"):
+            newNode=Node("else",parent)
             if self.check_term(":"):
-                if self.block():
+                newNode=Node(":",parent)
+                if self.block(parent):
                     return True
         
         elif self.verifyFollows(flws._else):
@@ -251,195 +326,269 @@ class Parser:
 
         return self.errorManage(self.block)		##El unico errorMessage no funciona aun
     
-    def simpleStmt(self):
-        if self.expr():
-            if self.ssTail():
+    def simpleStmt(self,parent=None):
+        #newNode=Node("simpleStmt",parent)
+        #parent=newNode
+        if self.expr(parent):
+            if self.ssTail(parent):
                 return True
             else:
                 return self.errorManage(self.reTrue)
         elif self.check_term("pass"):
+            newNode=Node("pass",parent)
             return True
         elif self.check_term("return"):
-            if self.returnExpr():
+            newNode=Node("return",parent)
+            if self.returnExpr(parent):
                 return True
             else:
                 return self.errorManage(self.reTrue)
             
     
-    def ssTail(self):       ##Puede ser vacío FOLLOW
+    def ssTail(self,parent=None):       ##Puede ser vacío FOLLOW
+        #newNode=Node("ssTail",parent)
+        #parent=newNode
         if self.check_term("="):
-            if self.expr():
+            newNode=Node("=",parent)
+            if self.expr(parent):
                 return True
         
         elif self.verifyFollows(flws.ssTail):
             return True
 
-    def returnExpr(self):      ##Puede ser vacío FOLLOW
-        if self.expr():
+    def returnExpr(self,parent=None):      ##Puede ser vacío FOLLOW
+        #newNode=Node("returnExpr",parent)
+        #parent=newNode
+        if self.expr(parent):
             return True       
         
         elif self.verifyFollows(flws.returnExpr):
             return True
     
-    def expr(self):
-        if self.orExpr():
-            if self.exprPrime():
+    def expr(self,parent=None):
+        newTree=Node("EXPR")
+        parentTemp=newTree
+        if self.orExpr(parentTemp):
+            if self.exprPrime(parentTemp):
+                if(newTree.height>0):
+                    if(newTree.children.__len__()==1):
+                        newTree.name="FACTOR"
+                    newTree.parent = parent
                 return True
     
-    def exprPrime(self):      ##Puede ser vacío FOLLOW
+    def exprPrime(self,parent=None):      ##Puede ser vacío FOLLOW
+        #newNode=Node("exprPrime",parent)
+        #parent=newNode
         if self.check_term("if"):
-            if self.andExpr():
+            newNode=Node("if",parent)
+            if self.andExpr(parent):
                 if self.check_term("else"):
-                    if self.andExpr():
-                        if self.exprPrime():
+                    newNode=Node("else",parent)
+                    if self.andExpr(parent):
+                        if self.exprPrime(parent):
                             return True
         
         elif self.verifyFollows(flws.exprPrime):
             return True
     
-    def orExpr(self):
-        if self.andExpr():
-            if self.orExprPrime():
+    def orExpr(self,parent=None):
+        #newNode=Node("orExpr",parent)
+        #parent=newNode
+        if self.andExpr(parent):
+            if self.orExprPrime(parent):
                 return True
             
-    def orExprPrime(self):    ##Puede ser vacío FOLLOW
+    def orExprPrime(self,parent=None):    ##Puede ser vacío FOLLOW
+        #newNode=Node("orExprPrime",parent)
+        #parent=newNode
         if self.check_term("or"):
-            if self.andExpr():
-                if self.orExprPrime():
+            newNode=Node("or",parent)
+            if self.andExpr(parent):
+                if self.orExprPrime(parent):
                     return True
                 
         elif self.verifyFollows(flws.orExprPrime):
             return True
     
-    def andExpr(self):
-        if self.notExpr():
-            if self.andExprPrime():
+    def andExpr(self,parent=None):
+        #newNode=Node("andExpr",parent)
+        #parent=newNode
+        if self.notExpr(parent):
+            if self.andExprPrime(parent):
                 return True
             
-    def andExprPrime(self):            ##Puede ser vacío FOLLOW
+    def andExprPrime(self,parent=None):            ##Puede ser vacío FOLLOW
+        #newNode=Node("andExprPrime",parent)
+        #parent=newNode
         if self.check_term("and"):
-            if self.notExpr():
-                if self.andExprPrime():
+            newNode=Node("and",parent)
+            if self.notExpr(parent):
+                if self.andExprPrime(parent):
                     return True
         
         elif self.verifyFollows(flws.andExprPrime):
             return True
                 
-    def notExpr(self):
-        if self.compExpr():
-            if self.notExprPrime():
+    def notExpr(self,parent=None):
+        #newNode=Node("notExpr",parent)
+        #parent=newNode
+        if self.compExpr(parent):
+            if self.notExprPrime(parent):
                 return True
-    def notExprPrime(self):       ##Puede ser vacío FOLLOW
+            
+    def notExprPrime(self,parent=None):       ##Puede ser vacío FOLLOW
+        #newNode=Node("notExprPrime",parent)
+        #parent=newNode
         if self.check_term("not"):
-            if self.compExpr():
-                if self.notExprPrime():
+            newNode=Node("not",parent)
+            if self.compExpr(parent):
+                if self.notExprPrime(parent):
                     return True
         
         elif self.verifyFollows(flws.notExprPrime):
             return True
         
-    def compExpr(self):
-        if self.intExpr():
-            if self.compExprPrime():
+    def compExpr(self,parent=None):
+        #newNode=Node("compExpr",parent)
+        #parent=newNode
+        if self.intExpr(parent):
+            if self.compExprPrime(parent):
                 return True
             
-    def compExprPrime(self):         ##Puede ser vacío FOLLOW
-        if self.compOp():
-            if self.intExpr():
-                if self.compExprPrime():
+    def compExprPrime(self,parent=None):         ##Puede ser vacío FOLLOW
+        #newNode=Node("compExprPrime",parent)
+        #parent=newNode
+        if self.compOp(parent):
+            if self.intExpr(parent):
+                if self.compExprPrime(parent):
                     return True
                 
         elif self.verifyFollows(flws.compExprPrime):
             return True
 
-    def intExpr(self):
-        if self.term():
-            if self.intExprPrime():
+    def intExpr(self,parent=None):
+        #newNode=Node("intExpr",parent)
+        #parent=newNode
+        if self.term(parent):
+            if self.intExprPrime(parent):
                 return True
 
-    def intExprPrime(self):     ##Puede ser vacío FOLLOW
+    def intExprPrime(self,parent=None):     ##Puede ser vacío FOLLOW
+        #newNode=Node("intExprPrime",parent)
+        #parent=newNode
         if self.check_term("+") or self.check_term("-"):
-            if self.term():
-                if self.intExprPrime():
+            newNode=Node(self.cur_token.name,parent)
+            if self.term(parent):
+                if self.intExprPrime(parent):
                     return True
                 
         elif self.verifyFollows(flws.intExprPrime):
             return True
                 
-    def term(self):
-        if self.factor():
-            if self.termPrime():
+    def term(self,parent=None):
+        #newNode=Node("term",parent)
+        #parent=newNode
+        if self.factor(parent):
+            if self.termPrime(parent):
                 return True
     
-    def termPrime(self):        ##Puede ser vacío FOLLOW
+    def termPrime(self,parent=None):        ##Puede ser vacío FOLLOW
+        #newNode=Node("termPrime",parent)
+        #parent=newNode
         if self.check_term("*") or self.check_term("//") or self.check_term("%"):
-            if self.factor():
-                if self.termPrime():
+            newNode=Node(self.cur_token.name,parent)
+            if self.factor(parent):
+                if self.termPrime(parent):
                     return True
             
         elif self.verifyFollows(flws.termPrime):
             return True
     
-    def factor(self):
-        
-        if self.name() or self.literal() or self._list():
+    def factor(self,parent=None):
+        #newNode=Node("factor",parent)
+        #parent=newNode
+        if self.name(parent) or self.literal(parent) or self._list(parent):
             return True
         if self.check_term("-"):
-            if self.factor():
+            newNode=Node("-",parent)
+            if self.factor(parent):
                 return True
         if self.check_term("("):
-            if self.expr():
+            newNode=Node("(",parent)
+            if self.expr(parent):
                 if self.check_term(")"):
+                    newNode=Node(")",parent)
                     return True
     
-    def name(self):
+    def name(self,parent=None):
+        #newNode=Node("name",parent)
+        #parent=newNode
         if self.check_term("ID"):
-            if self.nameTail():
+            newNode=Node(self.cur_token.name,parent)
+            if self.nameTail(parent):
                 return True
     
-    def nameTail(self):         ##Puede ser vacío FOLLOW
-        if self._list():
+    def nameTail(self,parent=None):         ##Puede ser vacío FOLLOW
+        #newNode=Node("nameTail",parent)
+        #parent=newNode
+        if self._list(parent):
             return True
         if self.check_term("("):
-            if self.exprList():
+            newNode=Node("(",parent)
+            if self.exprList(parent):
                 if self.check_term(")"):
+                    newNode=Node(")",parent)
                     return True
         
         elif self.verifyFollows(flws.nameTail):     #Está bien posicionado?
             return True
                 
-    def literal(self):
+    def literal(self,parent=None):
         if self.check_term("None") or self.check_term("True") or self.check_term("False") or self.check_term("INTEGER") or self.check_term("STRING"):
+            newNode=Node(self.cur_token.name,parent)
             return True
     
-    def _list(self):
+    def _list(self,parent=None):
+        #newNode=Node("list",parent)
+        #parent=newNode
         if self.check_term("["):
-            if self.exprList():
+            newNode=Node("[",parent)
+            if self.exprList(parent):
                 if self.check_term("]"):
+                    newNode=Node("]",parent)
                     return True
         #Retrocedo
-    def exprList(self):     ##Puede ser vacío FOLLOW
-        if self.expr():
-            if self.exprListTail():
+    def exprList(self,parent=None):     ##Puede ser vacío FOLLOW
+        #newNode=Node("exprList",parent)
+        #parent=newNode
+        if self.expr(parent):
+            if self.exprListTail(parent):
                 return True
         
         elif self.verifyFollows(flws.exprList):
             return True
     
-    def exprListTail(self):     ##Puede ser vacío FOLLOW
+    def exprListTail(self,parent=None):     ##Puede ser vacío FOLLOW
+        #newNode=Node("exprListTail",parent)
+        #parent=newNode
         if self.check_term(","):
-            if self.expr():
-                if self.exprListTail():
+            newNode=Node(",",parent)
+            if self.expr(parent):
+                if self.exprListTail(parent):
                     return True
         
         elif self.verifyFollows(flws.exprListTail):
             return True
                 
-    def compOp(self):
+    def compOp(self,parent=None):
+        #newNode=Node("compOp",parent)
+        #parent=newNode
         if self.check_term("==") or self.check_term("!=") or self.check_term("<") or self.check_term(">") or self.check_term("<=") or self.check_term(">=") or self.check_term("is"):
+            newNode=Node(self.cur_token.name,parent)
             return True
         
     def __del__(self):
+        self.treeFile.close()
         print("PARSING COMPLETED WITH", self.n_errors, "ERRORS")
     
     

@@ -23,6 +23,8 @@ Our scanner is going to receive help from a class called [chocoToken](https://gi
 
 Everything is achieved largely by two useful functions such as get_char() and peek_char(), the first one is going to move 'the pointer' to the next char and the second one is going to say what is in the next char without moving 'the pointer'. Besides we have jump_line().
 
+### - Parser
+<p align="center"><img width="602" alt="image" src="https://github.com/alexjr2001/ChocoPyCompiler/assets/63054183/cd5e09b9-e85a-492f-96ec-bb4d8cd99b25"></p>
 
 ### Running the project
 
