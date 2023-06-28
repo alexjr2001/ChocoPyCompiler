@@ -95,7 +95,7 @@ class Parser:
     
     ##Grammar functions
     def program(self):
-        Root= Node("Root");
+        Root= Node("Root")
         if self.defList(Root):
             if self.stmtList(Root): 
                 pass;
