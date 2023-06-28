@@ -12,7 +12,9 @@ Install it like this if you haven't before. The library "sys" is usually a built
 
 ```
 $ pip install pyfiglet
+$ pip install anytree
 ```
+We need graphviz as well, you can download it from [here](https://graphviz.org/download/). Don't forget to add it to the PATH.
 
 ## Compiler Structure
 
