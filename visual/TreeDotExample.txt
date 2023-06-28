@@ -1,0 +1,51 @@
+Root
+└── DEF
+    ├── def
+    ├── foo
+    ├── (
+    ├── TYPEDVAR
+    │   ├── x
+    │   ├── :
+    │   └── int
+    ├── ,
+    ├── TYPEDVAR
+    │   ├── y
+    │   ├── :
+    │   └── int
+    ├── )
+    ├── RETURN
+    │   ├── ->
+    │   └── int
+    ├── :
+    └── BLOCK
+        └── STMT
+            ├── if
+            ├── EXPR
+            │   ├── x
+            │   ├── <
+            │   └── y
+            ├── :
+            ├── BLOCK
+            │   ├── return
+            │   └── EXPR
+            │       ├── x
+            │       ├── +
+            │       └── 1
+            ├── elif
+            ├── EXPR
+            │   ├── x
+            │   ├── >
+            │   └── y
+            ├── :
+            ├── BLOCK
+            │   ├── return
+            │   └── EXPR
+            │       ├── y
+            │       ├── +
+            │       └── 1
+            ├── else
+            ├── :
+            └── BLOCK
+                ├── return
+                └── FACTOR
+                    └── 0
