@@ -31,8 +31,8 @@ Besides these functions, we got renderTree() that is for drawing the parsing tre
 
 In the following images, we see how the scanner is printed out with no errors and generates two files of visual representation of the parsing tree which is an abstract syntax tree (AST)
 <p align="center"><img width="602" alt="image" src="https://github.com/alexjr2001/ChocoPyCompiler/assets/63054183/cd5e09b9-e85a-492f-96ec-bb4d8cd99b25"></p>
-<p align="center"><img width="138" alt="image" src="https://github.com/alexjr2001/ChocoPyCompiler/assets/63054183/eef43fa5-7ace-49c4-962e-b37d4f1372c7"></p>
-<p align="center"><img width="922" alt="image" src="https://github.com/alexjr2001/ChocoPyCompiler/assets/63054183/49aa9594-0270-4b49-810d-5aa2961043b2"></p>
+<p align="center"><img width="216" alt="image" src="https://github.com/alexjr2001/ChocoPyCompiler/assets/63054183/c5527dcc-c967-4865-90f3-13776218e52a"></p>
+<p align="center"><img width="620" alt="image" src="https://github.com/alexjr2001/ChocoPyCompiler/assets/63054183/153e6985-c331-4951-86a9-59088ff08cf4"></p>
 
 
 
