@@ -3,7 +3,7 @@ Python implementation of a two-pass Compiler which receive a source code in orde
 
 <img src="https://user-images.githubusercontent.com/63054183/231643361-4fe1ec27-292c-4ff3-88ba-a863f26eb03b.png" width=20/>
 
-First of all, we are going to understand the structure of our projects, starting with the directories. In our [/lib](https://github.com/alexjr2001/ChocoPyCompiler/tree/main/lib) directory we have all the dictionaries ([dictionary.py](https://github.com/alexjr2001/ChocoPyCompiler/blob/main/lib/dictionary.py)) and the grammar of the ChocoPy Language, [/src](https://github.com/alexjr2001/ChocoPyCompiler/tree/main/src) contains all the source code of the project divided for the components of a typical compiler and finally, we have [/test](https://github.com/alexjr2001/ChocoPyCompiler/tree/main/test) where we stored all the quirkies programs to identify some errors and verify if the program can accept even the most unlikely situations. Furthermore, we see two loose documents the known [README.md](https://github.com/alexjr2001/ChocoPyCompiler/blob/main/README.md) (I mean, here I am!) and the [setup.py](https://github.com/alexjr2001/ChocoPyCompiler/blob/main/setup.py) with the main information.
+First of all, we are going to understand the structure of our projects, starting with the directories. In our [/lib](https://github.com/alexjr2001/ChocoPyCompiler/tree/main/lib) directory we have all the dictionaries ([dictionary.py](https://github.com/alexjr2001/ChocoPyCompiler/blob/main/lib/dictionary.py)), the grammar of the ChocoPy Language ([grammar.py](https://github.com/alexjr2001/ChocoPyCompiler/blob/feature/lib/grammar.py)) and the follows of every non-terminal ([follows.py](https://github.com/alexjr2001/ChocoPyCompiler/blob/feature/lib/follows.py)), [/src](https://github.com/alexjr2001/ChocoPyCompiler/tree/main/src) contains all the source code of the project divided for the components of a typical compiler and finally, we have [/test](https://github.com/alexjr2001/ChocoPyCompiler/tree/main/test) where we stored all the quirkies programs to identify some errors and verify if the program can accept even the most unlikely situations. Furthermore, we see two loose documents the known [README.md](https://github.com/alexjr2001/ChocoPyCompiler/blob/main/README.md) (I mean, here I am!) and the [setup.py](https://github.com/alexjr2001/ChocoPyCompiler/blob/main/setup.py) with the main information.
 
 
 ### Install libraries 
@@ -12,7 +12,9 @@ Install it like this if you haven't before. The library "sys" is usually a built
 
 ```
 $ pip install pyfiglet
+$ pip install anytree
 ```
+We need graphviz as well, you can download it from [here](https://graphviz.org/download/). Don't forget to add it to the PATH.
 
 ## Compiler Structure
 
@@ -22,6 +24,19 @@ Our scanner is going to receive help from a class called [chocoToken](https://gi
 <p align="center"><img width="421" alt="image" src="https://user-images.githubusercontent.com/63054183/231651433-087784c7-e2ab-4751-9193-f9b840c055d6.png"></p>
 
 Everything is achieved largely by two useful functions such as get_char() and peek_char(), the first one is going to move 'the pointer' to the next char and the second one is going to say what is in the next char without moving 'the pointer'. Besides we have jump_line().
+
+### - Parser
+This parser is recursive-descendent. After we pass our code through our scanner, we need to know if the code belongs to the grammar or not. That's why we have created the [Parser](https://github.com/alexjr2001/ChocoPyCompiler/blob/feature/src/RDparser.py). It is going to be link to the Scanner's output, where it says the line, type and name of the token found. It is possible because we pass in the Parser's constructor an argument which is a list of the identified object tokens. So to start, all the non-terminal terms in the grammar rules are going to be a function and the terminal ones will be an if statement to check whether it is correct or not. In case, we return to the first function "Program" without errors, the code is going to be accepted. Otherwise, during the path of calling functions we are going to make use of errorManage() function which will skip the characters till the next NEWLINE in order to continue our parsing.
+Besides these functions, we got renderTree() that is for drawing the parsing tree and generate to files in the [/visual](https://github.com/alexjr2001/ChocoPyCompiler/tree/feature/visual) directory (an [image](https://github.com/alexjr2001/ChocoPyCompiler/blob/feature/visual/TreeImgExample.png) and a [dot file](https://github.com/alexjr2001/ChocoPyCompiler/blob/feature/visual/TreeDotExample.txt) converted to .txt), peekToken() to see the next token without jumping, getToken() to jump to the next token, check_term() before jumping verifies if it is the expected term and also verifyFollows() in case the current non-terminal token is empty and we got to verify if the next one is possible. 
+
+In the following images, we see how the scanner is printed out with no errors and generates two files of visual representation of the parsing tree which is an abstract syntax tree (AST)
+<p align="center"><img width="602" alt="image" src="https://github.com/alexjr2001/ChocoPyCompiler/assets/63054183/cd5e09b9-e85a-492f-96ec-bb4d8cd99b25"></p>
+<p align="center"><img width="216" alt="image" src="https://github.com/alexjr2001/ChocoPyCompiler/assets/63054183/c5527dcc-c967-4865-90f3-13776218e52a"></p>
+<p align="center"><img width="620" alt="image" src="https://github.com/alexjr2001/ChocoPyCompiler/assets/63054183/153e6985-c331-4951-86a9-59088ff08cf4"></p>
+
+
+
+
 
 
 ### Running the project
